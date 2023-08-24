@@ -140,7 +140,7 @@ public class Scene implements JsonSerializable, Refreshable {
    * Maximum transmissivity cap.
    */
   public static final double MAX_TRANSMISSIVITY_CAP = 3;
-  
+
   /**
    * Default emitter light intensity.
    */
@@ -225,6 +225,10 @@ public class Scene implements JsonSerializable, Refreshable {
    * Target SPP for the scene.
    */
   protected int sppTarget = PersistentSettings.getSppTargetDefault();
+  /**
+   * Branch count for the scene.
+   */
+  protected int branchCount = PersistentSettings.getBranchCountDefault();
   /**
    * Recursive ray depth limit (not including Russian Roulette).
    */
@@ -381,6 +385,7 @@ public class Scene implements JsonSerializable, Refreshable {
     width = PersistentSettings.get3DCanvasWidth();
     height = PersistentSettings.get3DCanvasHeight();
     sppTarget = PersistentSettings.getSppTargetDefault();
+    branchCount = PersistentSettings.getBranchCountDefault();
 
     palette = new BlockPalette();
     worldOctree = new Octree(octreeImplementation, 1);
@@ -581,7 +586,7 @@ public class Scene implements JsonSerializable, Refreshable {
       }
 
       // Load the configured skymap file.
-      sky.loadSkymap();
+      sky.reloadSkymap(context.getSceneDirectory());
 
       loadedWorld = EmptyWorld.INSTANCE;
       if (!worldPath.isEmpty()) {
@@ -807,15 +812,6 @@ public class Scene implements JsonSerializable, Refreshable {
   }
 
   /**
-   * Test if the ray should be killed <strike>(using Russian Roulette)</strike>.
-   *
-   * @return {@code true} if the ray needs to die now
-   */
-  public final boolean kill(int depth, Random random) {
-    return depth >= rayDepth;
-  }
-
-  /**
    * Reload all loaded chunks.
    */
   public synchronized void reloadChunks(TaskTracker taskTracker) {
@@ -849,12 +845,14 @@ public class Scene implements JsonSerializable, Refreshable {
 
     BiomeStructure.Factory biomeStructureFactory = BiomeStructure.get(this.biomeStructureImplementation);
 
+    Dimension dimension = world.currentDimension();
+
     try (TaskTracker.Task task = taskTracker.task("(1/6) Loading regions")) {
       task.update(2, 1);
 
       loadedWorld = world;
       worldPath = loadedWorld.getWorldDirectory().getAbsolutePath();
-      worldDimension = world.currentDimension();
+      worldDimension = world.currentDimensionId();
 
       if (chunksToLoad.isEmpty()) {
         return;
@@ -881,12 +879,12 @@ public class Scene implements JsonSerializable, Refreshable {
       }
 
       for (ChunkPosition region : regions) {
-        world.getRegion(region).parse(yMin, yMax);
+        dimension.getRegion(region).parse(yMin, yMax);
       }
     }
 
     try (TaskTracker.Task task = taskTracker.task("(2/6) Loading entities")) {
-     entities.loadPlayers(task, world);
+     entities.loadPlayers(task, dimension);
     }
 
     BiomePalette biomePalette = new ArrayBiomePalette();
@@ -911,7 +909,7 @@ public class Scene implements JsonSerializable, Refreshable {
 
       ExecutorService executor = Executors.newSingleThreadExecutor();
       Future<?> nextChunkDataTask = executor.submit(() -> { //Initialise first chunk data for the for loop
-        world.getChunk(chunkPositions[0]).getChunkData(loadingChunkData, palette, biomePalette, yMin, yMax);
+        dimension.getChunk(chunkPositions[0]).getChunkData(loadingChunkData, palette, biomePalette, yMin, yMax);
         return null; // runnable can't throw non-RuntimeExceptions, so we use a callable instead and have to return something
       });
       for (int i = 0; i < chunkPositions.length; i++) {
@@ -943,7 +941,7 @@ public class Scene implements JsonSerializable, Refreshable {
           if (i + 1 < chunkPositions.length) { // schedule next task if possible
             final int finalI = i;
             nextChunkDataTask = executor.submit(() -> { //request chunk data for the next iteration of the loop
-              world.getChunk(chunkPositions[finalI + 1]).getChunkData(loadingChunkData, palette, biomePalette, yMin, yMax);
+              dimension.getChunk(chunkPositions[finalI + 1]).getChunkData(loadingChunkData, palette, biomePalette, yMin, yMax);
               return null; // runnable can't throw non-RuntimeExceptions, so we use a callable instead and have to return something
             });
           }
@@ -1236,7 +1234,7 @@ public class Scene implements JsonSerializable, Refreshable {
 
         if (!chunkData.isEmpty()){
           nonEmptyChunks.add(cp);
-          if (world.getChunk(cp).getVersion() == ChunkVersion.PRE_FLATTENING) {
+          if (dimension.getChunk(cp).getVersion() == ChunkVersion.PRE_FLATTENING) {
             legacyChunks.add(cp);
           }
         }
@@ -1960,6 +1958,7 @@ public class Scene implements JsonSerializable, Refreshable {
     dumpFrequency = other.dumpFrequency;
     saveSnapshots = other.saveSnapshots;
     sppTarget = other.sppTarget;
+    branchCount = other.branchCount;
     rayDepth = other.rayDepth;
     mode = other.mode;
     outputMode = other.outputMode;
@@ -1982,6 +1981,20 @@ public class Scene implements JsonSerializable, Refreshable {
    */
   public void setTargetSpp(int value) {
     sppTarget = value;
+  }
+
+  /**
+   * @return The branch count
+   */
+  public int getBranchCount() {
+    return branchCount;
+  }
+
+  /**
+   * @param value Branch count value
+   */
+  public void setBranchCount(int value) {
+    branchCount = value;
   }
 
   /**
@@ -2670,6 +2683,7 @@ public class Scene implements JsonSerializable, Refreshable {
     json.add("renderTime", renderTime);
     json.add("spp", spp);
     json.add("sppTarget", sppTarget);
+    json.add("branchCount", branchCount);
     json.add("rayDepth", rayDepth);
     json.add("pathTrace", mode != RenderMode.PREVIEW);
     json.add("dumpFrequency", dumpFrequency);
@@ -2923,6 +2937,7 @@ public class Scene implements JsonSerializable, Refreshable {
       .getFormat(json.get("outputMode").stringValue(outputMode.getName()))
       .orElse(PictureExportFormats.PNG);
     sppTarget = json.get("sppTarget").intValue(sppTarget);
+    branchCount = json.get("branchCount").intValue(branchCount);
     rayDepth = json.get("rayDepth").intValue(rayDepth);
     if (!json.get("pathTrace").isUnknown()) {
       boolean pathTrace = json.get("pathTrace").boolValue(false);
