@@ -115,6 +115,10 @@ public class Scene implements JsonSerializable, Refreshable {
    * Default emitter intensity.
    */
   public static final double DEFAULT_EMITTER_INTENSITY = 13;
+  /**
+   * Default exponent for emitter mapping.
+   */
+  public static final double DEFAULT_EMITTER_MAPPING_EXPONENT = 2;
 
   /**
    * Minimum emitter intensity.
@@ -125,6 +129,16 @@ public class Scene implements JsonSerializable, Refreshable {
    * Maximum emitter intensity.
    */
   public static final double MAX_EMITTER_INTENSITY = 1000;
+
+  /**
+   * Minimum emitter mapping exponent.
+   */
+  public static final double MIN_EMITTER_MAPPING_EXPONENT = 0;
+
+  /**
+   * Maximum emitter mapping exponent.
+   */
+  public static final double MAX_EMITTER_MAPPING_EXPONENT = 5;
 
   /**
    * Default transmissivity cap.
@@ -210,6 +224,7 @@ public class Scene implements JsonSerializable, Refreshable {
   protected boolean saveSnapshots = false;
   protected boolean emittersEnabled = DEFAULT_EMITTERS_ENABLED;
   protected double emitterIntensity = DEFAULT_EMITTER_INTENSITY;
+  protected double emitterMappingExponent = DEFAULT_EMITTER_MAPPING_EXPONENT;
   protected EmitterSamplingStrategy emitterSamplingStrategy = EmitterSamplingStrategy.NONE;
   protected double transmissivityCap = DEFAULT_TRANSMISSIVITY_CAP;
 
@@ -449,6 +464,7 @@ public class Scene implements JsonSerializable, Refreshable {
     sunSamplingStrategy = other.sunSamplingStrategy;
     emittersEnabled = other.emittersEnabled;
     emitterIntensity = other.emitterIntensity;
+    emitterMappingExponent = other.emitterMappingExponent;
     emitterSamplingStrategy = other.emitterSamplingStrategy;
     preventNormalEmitterWithSampling = other.preventNormalEmitterWithSampling;
     transmissivityCap = other.transmissivityCap;
@@ -1764,6 +1780,21 @@ public class Scene implements JsonSerializable, Refreshable {
   }
 
   /**
+   * @return The current emitter mapping exponent
+   */
+  public double getEmitterMappingExponent() {
+    return emitterMappingExponent;
+  }
+
+  /**
+   * Set the emitter mapping exponent.
+   */
+  public void setEmitterMappingExponent(double value) {
+    emitterMappingExponent = value;
+    refresh();
+  }
+
+  /**
    * Set the transparent sky option.
    */
   public void setTransparentSky(boolean value) {
@@ -2643,6 +2674,7 @@ public class Scene implements JsonSerializable, Refreshable {
     json.add("saveSnapshots", saveSnapshots);
     json.add("emittersEnabled", emittersEnabled);
     json.add("emitterIntensity", emitterIntensity);
+    json.add("emitterMappingExponent", emitterMappingExponent);
     json.add("transmissivityCap", transmissivityCap);
     json.add("sunSamplingStrategy", sunSamplingStrategy.getId());
     json.add("stillWater", stillWater);
@@ -2902,6 +2934,7 @@ public class Scene implements JsonSerializable, Refreshable {
     saveSnapshots = json.get("saveSnapshots").boolValue(saveSnapshots);
     emittersEnabled = json.get("emittersEnabled").boolValue(emittersEnabled);
     emitterIntensity = json.get("emitterIntensity").doubleValue(emitterIntensity);
+    emitterMappingExponent = json.get("emitterMappingExponent").doubleValue(emitterMappingExponent);
     transmissivityCap = json.get("transmissivityCap").doubleValue(transmissivityCap);
 
     if (json.get("sunSamplingStrategy").isUnknown()) {
