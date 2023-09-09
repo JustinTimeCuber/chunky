@@ -1866,9 +1866,7 @@ public class MinecraftBlockProvider implements BlockProvider {
         return stairs(
             tag, Texture.redSandstoneSide, Texture.redSandstoneTop, Texture.redSandstoneBottom);
       case "magma_block": {
-        Block block = new MinecraftBlock(name, Texture.magma);
-        block.emittance = 0.6f;
-        return block;
+        return new MinecraftBlock(name, Texture.magma);
       }
       case "nether_wart_block":
         return new MinecraftBlock(name, Texture.netherWartBlock);
@@ -2881,17 +2879,13 @@ public class MinecraftBlockProvider implements BlockProvider {
       case "lightning_rod":
         return new LightningRod(BlockProvider.facing(tag, "up"), tag.get("Properties").get("powered").stringValue("false").equals("true"));
       case "small_amethyst_bud":
-        return new AmethystCluster(name, Texture.smallAmethystBud, BlockProvider.facing(tag, "up"),
-            isLit(tag, true));
+        return new SpriteBlock(name, Texture.smallAmethystBud, BlockProvider.facing(tag, "up"));
       case "medium_amethyst_bud":
-        return new AmethystCluster(name, Texture.mediumAmethystBud, BlockProvider.facing(tag, "up"),
-            isLit(tag, true));
+        return new SpriteBlock(name, Texture.mediumAmethystBud, BlockProvider.facing(tag, "up"));
       case "large_amethyst_bud":
-        return new AmethystCluster(name, Texture.largeAmethystBud, BlockProvider.facing(tag, "up"),
-            isLit(tag, true));
+        return new SpriteBlock(name, Texture.largeAmethystBud, BlockProvider.facing(tag, "up"));
       case "amethyst_cluster":
-        return new AmethystCluster(name, Texture.amethystCluster, BlockProvider.facing(tag, "up"),
-            isLit(tag, true));
+        return new SpriteBlock(name, Texture.amethystCluster, BlockProvider.facing(tag, "up"));
       case "tinted_glass":
         return new TintedGlass();
       case "powder_snow":
