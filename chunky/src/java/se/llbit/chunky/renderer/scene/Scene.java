@@ -232,6 +232,7 @@ public class Scene implements JsonSerializable, Refreshable {
   protected double emitterMappingExponent = DEFAULT_EMITTER_MAPPING_EXPONENT;
   protected EmitterMappingType emitterMappingType = DEFAULT_EMITTER_MAPPING_TYPE;
   protected EmitterSamplingStrategy emitterSamplingStrategy = EmitterSamplingStrategy.NONE;
+  protected boolean fancierTranslucency = true;
   protected double transmissivityCap = DEFAULT_TRANSMISSIVITY_CAP;
 
   protected SunSamplingStrategy sunSamplingStrategy = SunSamplingStrategy.FAST;
@@ -474,6 +475,7 @@ public class Scene implements JsonSerializable, Refreshable {
     emitterMappingType = other.emitterMappingType;
     emitterSamplingStrategy = other.emitterSamplingStrategy;
     preventNormalEmitterWithSampling = other.preventNormalEmitterWithSampling;
+    fancierTranslucency = other.fancierTranslucency;
     transmissivityCap = other.transmissivityCap;
     transparentSky = other.transparentSky;
     yClipMin = other.yClipMin;
@@ -2698,6 +2700,7 @@ public class Scene implements JsonSerializable, Refreshable {
     json.add("emitterIntensity", emitterIntensity);
     json.add("emitterMappingExponent", emitterMappingExponent);
     json.add("emitterMappingType", emitterMappingType.getId());
+    json.add("fancierTranslucency", fancierTranslucency);
     json.add("transmissivityCap", transmissivityCap);
     json.add("sunSamplingStrategy", sunSamplingStrategy.getId());
     json.add("stillWater", stillWater);
@@ -2959,6 +2962,7 @@ public class Scene implements JsonSerializable, Refreshable {
     emitterIntensity = json.get("emitterIntensity").doubleValue(emitterIntensity);
     emitterMappingExponent = json.get("emitterMappingExponent").doubleValue(emitterMappingExponent);
     emitterMappingType = EmitterMappingType.valueOf(json.get("emitterMappingType").asString(DEFAULT_EMITTER_MAPPING_TYPE.getId()));
+    fancierTranslucency = json.get("fancierTranslucency").boolValue(fancierTranslucency);
     transmissivityCap = json.get("transmissivityCap").doubleValue(transmissivityCap);
 
     if (json.get("sunSamplingStrategy").isUnknown()) {
@@ -3487,6 +3491,14 @@ public class Scene implements JsonSerializable, Refreshable {
 
   public void setHideUnknownBlocks(boolean hideUnknownBlocks) {
     this.hideUnknownBlocks = hideUnknownBlocks;
+  }
+  public boolean getFancierTranslucency() {
+    return fancierTranslucency;
+  }
+
+  public void setFancierTranslucency(boolean value) {
+    fancierTranslucency = value;
+    refresh();
   }
 
   public double getTransmissivityCap() {
