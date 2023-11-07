@@ -259,10 +259,10 @@ public class PathTracer implements RayTracer {
       double sun_az = scene.sun().getAzimuth();
       double sun_alt = scene.sun().getAltitude();
       Vector3 sun_dir = new Vector3(FastMath.cos(sun_az)*FastMath.cos(sun_alt), FastMath.sin(sun_alt), FastMath.sin(sun_az)*FastMath.cos(sun_alt));
-      double circle_radius = scene.sun().getSunRadius() * scene.sun().getDiffuseSampleRadius();
-      double sample_chance = scene.sun().getDiffuseSampleChance();
+      double circle_radius = scene.sun().getSunRadius() * scene.sun().getImportanceSampleRadius();
+      double sample_chance = scene.sun().getImportanceSampleChance();
       double sample_area = (1 - FastMath.cos(circle_radius))*2*Math.PI;
-      if(Math.abs(currentMat.anisotropy) < 0.99 && scene.getSunSamplingStrategy().isDiffuseSampling()) {
+      if(Math.abs(currentMat.anisotropy) < 0.99 && scene.getSunSamplingStrategy().isImportanceSampling()) {
         if(random.nextDouble() < sample_chance) {
           // Generate random sun direction assuming sun is directly overhead
           double ay = random.nextDouble(FastMath.cos(circle_radius), 1);
