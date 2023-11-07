@@ -64,7 +64,7 @@ public class PreviewRayTracer implements RayTracer {
 
   /**
    * Calculate sky occlusion.
-   * @return occlusion value
+   * @return occlusion value (1 = occluded, 0 = transparent)
    */
   public static double skyOcclusion(Scene scene, WorkerState state) {
     Ray ray = state.ray;
@@ -86,7 +86,7 @@ public class PreviewRayTracer implements RayTracer {
   /**
    * Find next ray intersection.
    * @param random Used for particle fog, can be null if particleFog is false
-   * @return Next intersection
+   * @return true if intersected, false if no intersection has been found
    */
   public static boolean nextIntersection(Scene scene, Ray ray, Random random, IntersectionConfig config) {
     ray.setPrevMaterial(ray.getCurrentMaterial(), ray.getCurrentData());

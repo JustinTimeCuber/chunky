@@ -276,12 +276,14 @@ public class Ray {
     double ty = r * FastMath.sin(theta);
     double tz; // to be initialized later, after potentially changing tx and ty
 
-    // diffuse sun sampling (importance sampling)
-    if(scene.getSunSamplingStrategy().isDiffuseSampling()) {
+    // importance sampling, see PR #1604
+    // https://github.com/chunky-dev/chunky/pull/1604/
+    if(scene.getSunSamplingStrategy().isImportanceSampling()) {
 
       // constants
       final double sun_az = scene.sun().getAzimuth();
-      final double sun_alt = scene.sun().getAltitude();
+      final double sun_alt_fake = scene.sun().getAltitude();
+      final double sun_alt = Math.abs(sun_alt_fake) > Math.PI / 2 ? Math.signum(sun_alt_fake) * Math.PI - sun_alt_fake : sun_alt_fake;
       final double sun_dx = FastMath.cos(sun_az)*FastMath.cos(sun_alt);
       final double sun_dz = FastMath.sin(sun_az)*FastMath.cos(sun_alt);
       final double sun_dy = FastMath.sin(sun_alt);
@@ -302,8 +304,8 @@ public class Ray {
       }
       sun_tx /= sqrt;
       sun_ty /= sqrt;
-      double circle_radius = scene.sun().getSunRadius() * scene.sun().getDiffuseSampleRadius();
-      double sample_chance = scene.sun().getDiffuseSampleChance();
+      double circle_radius = scene.sun().getSunRadius() * scene.sun().getImportanceSampleRadius();
+      double sample_chance = scene.sun().getImportanceSampleChance();
       double sun_alt_relative = FastMath.asin(sun_tz);
       // check if there is any chance of the sun being visible
       if(sun_alt_relative + circle_radius > Ray.EPSILON) {
@@ -339,7 +341,7 @@ public class Ray {
           double sun_theta = FastMath.atan2(sun_ty, sun_tx);
           double segment_area_proportion = ((maxr * maxr - minr * minr) * circle_radius) / Math.PI;
           sample_chance *= segment_area_proportion / (circle_radius * circle_radius);
-          sample_chance = FastMath.min(sample_chance, Sun.MAX_DIFFUSE_SAMPLE_CHANCE);
+          sample_chance = FastMath.min(sample_chance, Sun.MAX_IMPORTANCE_SAMPLE_CHANCE);
           if(random.nextDouble() < sample_chance) {
             // sun sampling
             r = FastMath.sqrt(minr * minr * x1 + maxr * maxr * (1 - x1));
@@ -351,7 +353,7 @@ public class Ray {
           } else {
             // non-sun sampling
             // basically, if we are going to sample the sun segment, reset the rng until we don't
-            while(r > minr || FastMath.abs(theta - sun_theta) < circle_radius) {
+            while(r > minr && r < maxr && angleDistance(theta, sun_theta) < circle_radius) {
               x1 = random.nextDouble();
               x2 = random.nextDouble();
               r = FastMath.sqrt(x1);
@@ -411,6 +413,10 @@ public class Ray {
       d.scaleAdd(factor, geomN);
       d.normalize();
     }
+  }
+  private double angleDistance(double a1, double a2) {
+    double diff = Math.abs(a1 - a2) % (2*Math.PI);
+    return diff > Math.PI ? 2*Math.PI - diff : diff;
   }
 
   /**

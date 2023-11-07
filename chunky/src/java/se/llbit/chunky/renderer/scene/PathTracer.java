@@ -94,10 +94,10 @@ public class PathTracer implements RayTracer {
       Material currentMat = ray.getCurrentMaterial();
       Material prevMat = ray.getPrevMaterial();
 
-      if (!scene.stillWater && ray.getNormal().y != 0 &&
+      if (!(scene.getCurrentWaterShader() instanceof StillWaterShader) && ray.getNormal().y != 0 &&
           ((currentMat.isWater() && prevMat == Air.INSTANCE)
               || (currentMat == Air.INSTANCE && prevMat.isWater()))) {
-        scene.getWaterShading().doWaterShading(ray, scene.getAnimationTime());
+        scene.getCurrentWaterShader().doWaterShading(ray, scene.getAnimationTime());
         if (currentMat == Air.INSTANCE) {
           ray.invertNormal();
         }
@@ -404,7 +404,7 @@ public class PathTracer implements RayTracer {
           hit = true;
         }
       }
-
+      
       next.diffuseReflection(ray, random, scene);
       hit = pathTrace(scene, next, state, false) || hit;
       if (hit) {

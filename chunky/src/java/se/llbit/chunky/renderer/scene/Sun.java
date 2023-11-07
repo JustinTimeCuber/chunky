@@ -63,34 +63,34 @@ public class Sun implements JsonSerializable {
   public static final double MAX_APPARENT_BRIGHTNESS = 50;
 
   /**
-   * Default probability for diffuse sun sampling
+   * Default probability for importance sun sampling
    */
-  public static final double DEFAULT_DIFFUSE_SAMPLE_CHANCE = 0.1;
+  public static final double DEFAULT_IMPORTANCE_SAMPLE_CHANCE = 0.1;
 
   /**
-   * Minimum probability for diffuse sun sampling
+   * Minimum probability for importance sun sampling
    */
-  public static final double MIN_DIFFUSE_SAMPLE_CHANCE = 0.001;
+  public static final double MIN_IMPORTANCE_SAMPLE_CHANCE = 0.001;
 
   /**
-   * Maximum probability for diffuse sun sampling
+   * Maximum probability for importance sun sampling
    */
-  public static final double MAX_DIFFUSE_SAMPLE_CHANCE = 0.9;
+  public static final double MAX_IMPORTANCE_SAMPLE_CHANCE = 0.9;
 
   /**
-   * Default radius (relative to sun) for diffuse sun sampling
+   * Default radius (relative to sun) for importance sun sampling
    */
-  public static final double DEFAULT_DIFFUSE_SAMPLE_RADIUS = 1.2;
+  public static final double DEFAULT_IMPORTANCE_SAMPLE_RADIUS = 1.2;
 
   /**
-   * Minimum radius (relative to sun) for diffuse sun sampling
+   * Minimum radius (relative to sun) for importance sun sampling
    */
-  public static final double MIN_DIFFUSE_SAMPLE_RADIUS = 0.1;
+  public static final double MIN_IMPORTANCE_SAMPLE_RADIUS = 0.1;
 
   /**
-   * Maximum radius (relative to sun) for diffuse sun sampling
+   * Maximum radius (relative to sun) for importance sun sampling
    */
-  public static final double MAX_DIFFUSE_SAMPLE_RADIUS = 5;
+  public static final double MAX_IMPORTANCE_SAMPLE_RADIUS = 5;
 
   private static final double xZenithChroma[][] =
       {{0.00166, -0.00375, 0.00209, 0}, {-0.02903, 0.06377, -0.03203, 0.00394},
@@ -168,8 +168,8 @@ public class Sun implements JsonSerializable {
   private Vector3 apparentTextureBrightness = new Vector3(1, 1, 1);
   private boolean enableTextureModification = false;
 
-  private double diffuseSampleChance = DEFAULT_DIFFUSE_SAMPLE_CHANCE;
-  private double diffuseSampleRadius = DEFAULT_DIFFUSE_SAMPLE_RADIUS;
+  private double importanceSampleChance = DEFAULT_IMPORTANCE_SAMPLE_CHANCE;
+  private double importanceSampleRadius = DEFAULT_IMPORTANCE_SAMPLE_RADIUS;
 
   private double azimuth = Math.PI / 2.5;
   private double altitude = Math.PI / 3;
@@ -236,8 +236,8 @@ public class Sun implements JsonSerializable {
     radius = other.radius;
     enableTextureModification = other.enableTextureModification;
     luminosityPdf = other.luminosityPdf;
-    diffuseSampleRadius = other.diffuseSampleRadius;
-    diffuseSampleChance = other.diffuseSampleChance;
+    importanceSampleRadius = other.importanceSampleRadius;
+    importanceSampleChance = other.importanceSampleChance;
     initSun();
   }
 
@@ -340,7 +340,7 @@ public class Sun implements JsonSerializable {
   }
 
   /**
-   * Used with <code>SSS: OFF</code> and <code>SSS: HIGH_QUALITY</code>.
+   * Used with <code>SSS: OFF</code>, <code>SSS: IMPORTANCE</code>, and <code>SSS: HIGH_QUALITY</code>.
    */
   public boolean intersectDiffuse(Ray ray) {
     if (ray.d.dot(sw) < .5) {
@@ -503,10 +503,10 @@ public class Sun implements JsonSerializable {
     sun.add("modifySunTexture", enableTextureModification);
     sun.add("color", ColorUtil.rgbToJson(color));
     sun.add("apparentColor", ColorUtil.rgbToJson(apparentColor));
-    JsonObject diffuseSamplingObj = new JsonObject();
-    diffuseSamplingObj.add("chance", diffuseSampleChance);
-    diffuseSamplingObj.add("radius", diffuseSampleRadius);
-    sun.add("diffuseSampling", diffuseSamplingObj);
+    JsonObject importanceSamplingObj = new JsonObject();
+    importanceSamplingObj.add("chance", importanceSampleChance);
+    importanceSamplingObj.add("radius", importanceSampleRadius);
+    sun.add("importanceSampling", importanceSamplingObj);
     sun.add("drawTexture", drawTexture);
     return sun;
   }
@@ -528,10 +528,10 @@ public class Sun implements JsonSerializable {
       apparentColor.set(ColorUtil.jsonToRGB(json.get("apparentColor").asObject()));
     }
 
-    if(json.get("diffuseSampling").isObject()) {
-      JsonObject diffuseSamplingObj = json.get("diffuseSampling").object();
-      diffuseSampleChance = diffuseSamplingObj.get("chance").doubleValue(DEFAULT_DIFFUSE_SAMPLE_CHANCE);
-      diffuseSampleRadius = diffuseSamplingObj.get("radius").doubleValue(DEFAULT_DIFFUSE_SAMPLE_RADIUS);
+    if(json.get("importanceSampling").isObject()) {
+      JsonObject importanceSamplingObj = json.get("importanceSampling").object();
+      importanceSampleChance = importanceSamplingObj.get("chance").doubleValue(DEFAULT_IMPORTANCE_SAMPLE_CHANCE);
+      importanceSampleRadius = importanceSamplingObj.get("radius").doubleValue(DEFAULT_IMPORTANCE_SAMPLE_RADIUS);
     }
 
     drawTexture = json.get("drawTexture").boolValue(drawTexture);
@@ -561,17 +561,17 @@ public class Sun implements JsonSerializable {
     return drawTexture;
   }
 
-  public double getDiffuseSampleChance() { return diffuseSampleChance; }
+  public double getImportanceSampleChance() { return importanceSampleChance; }
 
-  public void setDiffuseSampleChance(double d) {
-    diffuseSampleChance = d;
+  public void setImportanceSampleChance(double d) {
+    importanceSampleChance = d;
     scene.refresh();
   }
 
-  public double getDiffuseSampleRadius() { return diffuseSampleRadius; }
+  public double getImportanceSampleRadius() { return importanceSampleRadius; }
 
-  public void setDiffuseSampleRadius(double d) {
-    diffuseSampleRadius = d;
+  public void setImportanceSampleRadius(double d) {
+    importanceSampleRadius = d;
     scene.refresh();
   }
 }
