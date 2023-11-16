@@ -259,8 +259,8 @@ public class PathTracer implements RayTracer {
       double sun_az = scene.sun().getAzimuth();
       double sun_alt_fake = scene.sun().getAltitude();
       double sun_alt = Math.abs(sun_alt_fake) > Math.PI / 2 ? Math.signum(sun_alt_fake) * Math.PI - sun_alt_fake : sun_alt_fake;
-      double circle_radius = scene.sun().getSunRadius() * scene.sun().getImportanceSampleRadius() * 1.1 * 0;
-      double sample_chance = scene.sun().getImportanceSampleChance() * 0;
+      double circle_radius = scene.sun().getSunRadius() * scene.sun().getImportanceSampleRadius() * 1.1;
+      double sample_chance = scene.sun().getImportanceSampleChance();
       double sample_area = (1 - FastMath.cos(circle_radius))*2*Math.PI;
       if(Math.abs(currentMat.anisotropy) < 0.99 && scene.getSunSamplingStrategy().isImportanceSampling()) {
         if(random.nextDouble() < sample_chance) {
