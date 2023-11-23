@@ -265,8 +265,8 @@ public class PathTracer implements RayTracer {
       if(Math.abs(currentMat.anisotropy) < 0.99 && scene.getSunSamplingStrategy().isImportanceSampling()) {
         if(random.nextDouble() < sample_chance) {
           // Generate random sun direction assuming sun is directly overhead
-          double ay = random.nextDouble(FastMath.cos(circle_radius), 1);
-          double phi = random.nextDouble(2*Math.PI);
+          double ay = 1 - random.nextDouble() * (1 - FastMath.cos(circle_radius));
+          double phi = random.nextDouble() * 2*Math.PI;
           double ax = FastMath.sqrt(1 - ay * ay)*FastMath.sin(phi);
           double az = FastMath.sqrt(1 - ay * ay)*FastMath.cos(phi);
           // Transform to actual sun position
@@ -284,8 +284,8 @@ public class PathTracer implements RayTracer {
           }
         } else {
           // Generate random sun direction assuming sun is directly overhead
-          double ay = random.nextDouble(-1, FastMath.cos(circle_radius));
-          double phi = random.nextDouble(2*Math.PI);
+          double ay = -1 + random.nextDouble() * (1 + FastMath.cos(circle_radius));
+          double phi = random.nextDouble() * 2*Math.PI;
           double ax = FastMath.sqrt(1 - ay * ay)*FastMath.sin(phi);
           double az = FastMath.sqrt(1 - ay * ay)*FastMath.cos(phi);
           // Transform to actual sun position
