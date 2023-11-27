@@ -256,51 +256,39 @@ public class PathTracer implements RayTracer {
         cumulativeColor.z += emittance.z + ray.color.z * (directLightB * scene.sun.emittance.z + next.color.z);
       }
     } else {
-      double sun_az = scene.sun().getAzimuth();
-      double sun_alt_fake = scene.sun().getAltitude();
-      double sun_alt = Math.abs(sun_alt_fake) > Math.PI / 2 ? Math.signum(sun_alt_fake) * Math.PI - sun_alt_fake : sun_alt_fake;
-      double circle_radius = scene.sun().getSunRadius() * scene.sun().getImportanceSampleRadius() * 1.1;
-      double sample_chance = scene.sun().getImportanceSampleChance();
-      double sample_area = (1 - FastMath.cos(circle_radius))*2*Math.PI;
       if(Math.abs(currentMat.anisotropy) < 0.99 && scene.getSunSamplingStrategy().isImportanceSampling()) {
+        double sun_az = scene.sun().getAzimuth();
+        double sun_alt_fake = scene.sun().getAltitude();
+        double sun_alt = Math.abs(sun_alt_fake) > Math.PI / 2 ? Math.signum(sun_alt_fake) * Math.PI - sun_alt_fake : sun_alt_fake;
+        double circle_radius = scene.sun().getSunRadius() * scene.sun().getImportanceSampleRadius() * 1.1;
+        double sample_chance = scene.sun().getImportanceSampleChance();
+        double sample_area_proportion = (1 - FastMath.cos(circle_radius)) / 2;
+        double ay;
         if(random.nextDouble() < sample_chance) {
           // Generate random sun direction assuming sun is directly overhead
-          double ay = 1 - random.nextDouble() * (1 - FastMath.cos(circle_radius));
-          double phi = random.nextDouble() * 2*Math.PI;
-          double ax = FastMath.sqrt(1 - ay * ay)*FastMath.sin(phi);
-          double az = FastMath.sqrt(1 - ay * ay)*FastMath.cos(phi);
-          // Transform to actual sun position
-          double bx = ax * FastMath.sin(sun_alt) + ay * FastMath.cos(sun_alt);
-          double by = -ax * FastMath.cos(sun_alt) + ay * FastMath.sin(sun_alt);
-          double cx = bx * FastMath.cos(sun_az) - az * FastMath.sin(sun_az);
-          double cz = bx * FastMath.sin(sun_az) + az * FastMath.cos(sun_az);
-          next.d.set(cx, by, cz);
-          double pdf = phaseHG(inboundDirection.dot(next.d), currentMat.anisotropy);
-          hit |= pathTrace(scene, next, state, false);
-          if (hit) {
-            cumulativeColor.x += (emittance.x + ray.color.x * (next.color.x)) * pdf * sample_area / sample_chance;
-            cumulativeColor.y += (emittance.y + ray.color.y * (next.color.y)) * pdf * sample_area / sample_chance;
-            cumulativeColor.z += (emittance.z + ray.color.z * (next.color.z)) * pdf * sample_area / sample_chance;
-          }
+          ay = 1 - random.nextDouble() * (1 - FastMath.cos(circle_radius));
         } else {
-          // Generate random sun direction assuming sun is directly overhead
-          double ay = -1 + random.nextDouble() * (1 + FastMath.cos(circle_radius));
-          double phi = random.nextDouble() * 2*Math.PI;
-          double ax = FastMath.sqrt(1 - ay * ay)*FastMath.sin(phi);
-          double az = FastMath.sqrt(1 - ay * ay)*FastMath.cos(phi);
-          // Transform to actual sun position
-          double bx = ax * FastMath.sin(sun_alt) + ay * FastMath.cos(sun_alt);
-          double by = -ax * FastMath.cos(sun_alt) + ay * FastMath.sin(sun_alt);
-          double cx = bx * FastMath.cos(sun_az) - az * FastMath.sin(sun_az);
-          double cz = bx * FastMath.sin(sun_az) + az * FastMath.cos(sun_az);
-          next.d.set(cx, by, cz);
-          double pdf = phaseHG(inboundDirection.dot(next.d), currentMat.anisotropy);
-          hit |= pathTrace(scene, next, state, false);
-          if (hit) {
-            cumulativeColor.x += (emittance.x + ray.color.x * (next.color.x)) * pdf * (4*Math.PI - sample_area) / (1 - sample_chance);
-            cumulativeColor.y += (emittance.y + ray.color.y * (next.color.y)) * pdf * (4*Math.PI - sample_area) / (1 - sample_chance);
-            cumulativeColor.z += (emittance.z + ray.color.z * (next.color.z)) * pdf * (4*Math.PI - sample_area) / (1 - sample_chance);
-          }
+          // Generate random non-sun direction assuming sun is directly overhead
+          ay = -1 + random.nextDouble() * (1 + FastMath.cos(circle_radius));
+          // Invert proportions
+          sample_chance = 1 - sample_chance;
+          sample_area_proportion = 1 - sample_area_proportion;
+        }
+        double phi = random.nextDouble() * 2 * Math.PI;
+        double ax = FastMath.sqrt(1 - ay * ay) * FastMath.sin(phi);
+        double az = FastMath.sqrt(1 - ay * ay) * FastMath.cos(phi);
+        // Transform to actual sun position
+        double bx = ax * FastMath.sin(sun_alt) + ay * FastMath.cos(sun_alt);
+        double by = -ax * FastMath.cos(sun_alt) + ay * FastMath.sin(sun_alt);
+        double cx = bx * FastMath.cos(sun_az) - az * FastMath.sin(sun_az);
+        double cz = bx * FastMath.sin(sun_az) + az * FastMath.cos(sun_az);
+        next.d.set(cx, by, cz);
+        double pdf4pi = phaseHG(inboundDirection.dot(next.d), currentMat.anisotropy) * 4 * Math.PI;
+        hit |= pathTrace(scene, next, state, false);
+        if(hit) {
+          cumulativeColor.x += (emittance.x + ray.color.x * (next.color.x)) * pdf4pi * sample_area_proportion / sample_chance;
+          cumulativeColor.y += (emittance.y + ray.color.y * (next.color.y)) * pdf4pi * sample_area_proportion / sample_chance;
+          cumulativeColor.z += (emittance.z + ray.color.z * (next.color.z)) * pdf4pi * sample_area_proportion / sample_chance;
         }
       } else {
         Vector3 outboundDirection = new Vector3();
