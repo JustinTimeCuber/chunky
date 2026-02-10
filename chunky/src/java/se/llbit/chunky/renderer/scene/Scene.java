@@ -292,6 +292,8 @@ public class Scene implements JsonSerializable, Refreshable {
    */
   protected double[] samples;
 
+  protected double[] variance;
+
   private AlphaBuffer alphaBuffer = new AlphaBuffer();
 
   private boolean finalized = false;
@@ -373,6 +375,8 @@ public class Scene implements JsonSerializable, Refreshable {
     ZipExport.zip(targetFile, sceneDirectory, name, extensions);
   }
 
+  public File snapshotDirectory;
+
   /**
    * This initializes the render buffers when initializing the
    * scene and after scene canvas size changes.
@@ -382,6 +386,7 @@ public class Scene implements JsonSerializable, Refreshable {
     backBuffer = new BitmapImage(canvasConfig.getWidth(), canvasConfig.getHeight());
     alphaBuffer.reset();
     samples = new double[canvasConfig.getPixelCount() * 3];
+    variance = new double[canvasConfig.getPixelCount() * 3];
   }
 
   /**
@@ -468,6 +473,7 @@ public class Scene implements JsonSerializable, Refreshable {
       backBuffer = other.backBuffer;
       frontBuffer = other.frontBuffer;
       samples = other.samples;
+      variance = other.variance;
     }
     // TODO: could we copy it without resetting if the export format and camera perspective didn't change?
     alphaBuffer.reset();
@@ -2016,6 +2022,7 @@ public class Scene implements JsonSerializable, Refreshable {
     if (!directory.exists()) {
       directory.mkdirs();
     }
+    snapshotDirectory = directory;
     saveFrame(targetFile, taskTracker);
   }
 
@@ -2329,6 +2336,32 @@ public class Scene implements JsonSerializable, Refreshable {
    */
   public double[] getSampleBuffer() {
     return samples;
+  }
+
+  /**
+   * Get direct access to the variance buffer.
+   * Format:
+   * variance[i*3] = sum of squares of samples at pixel i
+   * variance[i*3+1] = true spp at pixel i (accounting for skipped samples)
+   * variance[i*3+2] = blurred variance at pixel i, reused for a while to reduce computation
+   *
+   * @return The variance buffer for this scene
+   */
+  public double[] getVarianceBuffer() {
+    return variance;
+  }
+
+  /**
+   * Computes the variance of the sample mean at every pixel, i.e. the square of the standard error.
+   *
+   * @return Sampling variance values
+   */
+  public double[] getComputedVariance() {
+    double[] cv = new double[variance.length/3];
+    for(int i = 0; i < cv.length; i++) {
+      cv[i] = (variance[i*3]/variance[i*3+1] - samples[i*3]*samples[i*3] - samples[i*3+1]*samples[i*3+1] - samples[i*3+2]*samples[i*3+2])/variance[i*3+1];
+    }
+    return cv;
   }
 
   /**

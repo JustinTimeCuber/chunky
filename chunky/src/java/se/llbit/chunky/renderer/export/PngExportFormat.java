@@ -17,6 +17,8 @@
  */
 package se.llbit.chunky.renderer.export;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import se.llbit.chunky.renderer.projection.ProjectionMode;
@@ -31,6 +33,8 @@ import se.llbit.util.TaskTracker;
  * Standard PNG with 8-bit color channels.
  */
 public class PngExportFormat implements PictureExportFormat {
+
+  public static boolean debugExportVarianceMap = true;
 
   @Override
   public String getName() {
@@ -50,7 +54,7 @@ public class PngExportFormat implements PictureExportFormat {
   @Override
   public void write(OutputStream out, Scene scene, TaskTracker taskTracker) throws IOException {
     try (TaskTracker.Task task = taskTracker.task("Writing PNG");
-        PngFileWriter writer = new PngFileWriter(out)) {
+      PngFileWriter writer = new PngFileWriter(out)) {
       int width = scene.canvasConfig.getWidth();
       int height = scene.canvasConfig.getHeight();
       BitmapImage backBuffer = scene.getBackBuffer();
@@ -65,8 +69,28 @@ public class PngExportFormat implements PictureExportFormat {
           && scene.camera().getFov() <= 181) {
         writePanoramaMetaData(scene, writer);
       }
+    }
+    if(debugExportVarianceMap) {
+      try (TaskTracker.Task task = taskTracker.task("Writing Variance PNG");
+           PngFileWriter writer = new PngFileWriter(new FileOutputStream(new File(scene.snapshotDirectory, String.format("%s-%d-variance.png", scene.name, scene.spp))))) {
+        int width = scene.canvasConfig.getWidth();
+        int height = scene.canvasConfig.getHeight();
+        //double[] variance = scene.getComputedVariance();
+        int[] intv = new int[width*height];
+        for (int i = 0; i < intv.length; i++) {
+          double threshold = 0.001;
+          int scaled = (int) (255/threshold * Math.min(threshold, scene.getVarianceBuffer()[i*3+2]));
+          intv[i] = scaled + (scaled << 8) + (scaled << 16);
+        }
+        writer.write(intv, width, height, task);
+        if (scene.camera().getProjectionMode() == ProjectionMode.PANORAMIC
+          && scene.camera().getFov() >= 179
+          && scene.camera().getFov() <= 181) {
+          writePanoramaMetaData(scene, writer);
+        }
       }
     }
+  }
 
   private static final String PNG_PANORAMA_META_ADOBE_RDF_XML =
     "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>\n" +
