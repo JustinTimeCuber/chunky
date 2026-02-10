@@ -2343,7 +2343,7 @@ public class Scene implements JsonSerializable, Refreshable {
    * Format:
    * variance[i*3] = sum of squares of samples at pixel i
    * variance[i*3+1] = true spp at pixel i (accounting for skipped samples)
-   * variance[i*3+2] = blurred variance at pixel i, reused for a while to reduce computation
+   * variance[i*3+2] = blurred variance at pixel i, normalized against brightness
    *
    * @return The variance buffer for this scene
    */

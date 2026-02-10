@@ -132,7 +132,8 @@ public class PathTracingRenderer extends TileBasedRenderer {
         for (int y = 0; y < height; y++) {
           double rowSum = 0.0;
           for (int x = 0; x < width; x++) {
-            rowSum += computedVariance[y * width + x];
+            // Normalize variance against (pixel brightness + 0.1)
+            rowSum += computedVariance[y * width + x] / (0.1 + sampleBuffer[3*(y * width + x)] + sampleBuffer[3*(y * width + x) + 1] + sampleBuffer[3*(y * width + x) + 2]);
             double above = (y > 0) ? integral[(y - 1) * width + x] : 0.0;
             integral[y * width + x] = rowSum + above;
           }
