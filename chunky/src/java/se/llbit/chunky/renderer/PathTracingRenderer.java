@@ -77,7 +77,9 @@ public class PathTracingRenderer extends TileBasedRenderer {
         int x = pixel.firstInt();
         int y = pixel.secondInt();
         int offset = 3 * (y*width + x);
-        if(scene.spp >= 100 && Math.random() > 0.02 + 0.98*(scene.getVarianceBuffer()[offset + 2]/0.001)) {
+        double threshold = 0.001;
+        double noise = scene.getVarianceBuffer()[offset + 2];
+        if(scene.spp >= 100 && noise < threshold && Math.random() > 0.01 + 0.09*(noise/threshold)) {
           return;
         }
 
@@ -133,7 +135,7 @@ public class PathTracingRenderer extends TileBasedRenderer {
           double rowSum = 0.0;
           for (int x = 0; x < width; x++) {
             // Normalize variance against (pixel brightness + 0.1)
-            rowSum += computedVariance[y * width + x] / (0.1 + sampleBuffer[3*(y * width + x)] + sampleBuffer[3*(y * width + x) + 1] + sampleBuffer[3*(y * width + x) + 2]);
+            rowSum += computedVariance[y * width + x] / Math.pow(0.01 + sampleBuffer[3*(y * width + x)] + sampleBuffer[3*(y * width + x) + 1] + sampleBuffer[3*(y * width + x) + 2], 2);
             double above = (y > 0) ? integral[(y - 1) * width + x] : 0.0;
             integral[y * width + x] = rowSum + above;
           }
